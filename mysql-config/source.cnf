@@ -1,0 +1,22 @@
+[mysqld]
+# Server ID - must be unique
+server-id = 1
+
+# Enable binary logging
+log-bin = mysql-bin
+
+# GTID configuration
+gtid-mode = ON
+enforce-gtid-consistency = ON
+
+# Binlog format
+binlog-format = ROW
+
+# Enable binary log for replication
+log-slave-updates = ON
+
+# Binlog retention
+binlog-expire-logs-seconds = 864000
+
+# Replication user
+# This will be created in the init script

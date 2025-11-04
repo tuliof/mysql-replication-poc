@@ -1,0 +1,25 @@
+[mysqld]
+# Server ID - must be unique
+server-id = 2
+
+# Enable binary logging (recommended even for replicas)
+log-bin = mysql-bin
+
+# GTID configuration
+gtid-mode = ON
+enforce-gtid-consistency = ON
+
+# Binlog format
+binlog-format = ROW
+
+# Enable binary log updates
+log-slave-updates = ON
+
+# Read-only mode (optional but recommended for replicas)
+# Prevents writes except from replication thread and super users
+read-only = ON
+super-read-only = ON
+
+# Replica configuration
+relay-log = relay-bin
+relay-log-recovery = ON
