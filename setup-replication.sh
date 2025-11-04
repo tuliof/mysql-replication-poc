@@ -6,14 +6,31 @@
 set -e
 
 echo "Waiting for MySQL source to be ready..."
-sleep 15
+sleep 10
+
+echo "Creating backup of source database with GTID position..."
+docker exec mysql-source mysqldump -uroot -prootpass \
+    --all-databases \
+    --single-transaction \
+    --triggers \
+    --routines \
+    --events \
+    --set-gtid-purged=ON \
+    > /tmp/source_backup.sql
+
+echo "Waiting for replica to be ready..."
+sleep 10
+
+echo "Restoring backup to replica..."
+docker exec -i mysql-replica mysql -uroot -prootpass < /tmp/source_backup.sql
 
 echo "Configuring replication on replica..."
-
-# Configure the replica to connect to the source
 docker exec -i mysql-replica mysql -uroot -prootpass <<'EOF'
 -- Stop any existing replication
 STOP REPLICA;
+
+-- Reset replica to clear any previous state
+RESET REPLICA ALL;
 
 -- Configure the source connection
 CHANGE REPLICATION SOURCE TO
@@ -27,6 +44,9 @@ CHANGE REPLICATION SOURCE TO
 -- Start replication
 START REPLICA;
 
+-- Enable super read-only mode on the replica
+SET GLOBAL super_read_only = ON;
+
 -- Show replica status
 SHOW REPLICA STATUS\G
 EOF
@@ -36,3 +56,9 @@ echo "Replication setup completed!"
 echo ""
 echo "To check replication status, run:"
 echo "docker exec mysql-replica mysql -uroot -prootpass -e 'SHOW REPLICA STATUS\G'"
+echo ""
+echo "To test replication, insert data on source:"
+echo "docker exec mysql-source mysql -uroot -prootpass demo_db -e \"INSERT INTO users (full_name, email) VALUES ('Test User', 'test@example.com');\""
+echo "Then verify on replica:"
+echo "docker exec mysql-replica mysql -uroot -prootpass demo_db -e \"SELECT * FROM users WHERE email = 'test@example.com';\""
+

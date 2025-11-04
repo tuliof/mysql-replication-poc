@@ -15,10 +15,11 @@ binlog-format = ROW
 # Enable binary log updates
 log-slave-updates = ON
 
-# Read-only mode (optional but recommended for replicas)
+# Read-only mode (will be enabled after replication is set up)
 # Prevents writes except from replication thread and super users
+# Note: super-read-only is NOT set here to allow initial setup
+# It will be enabled by the setup-replication.sh script
 read-only = ON
-super-read-only = ON
 
 # Replica configuration
 relay-log = relay-bin
