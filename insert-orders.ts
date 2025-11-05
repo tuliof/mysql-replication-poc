@@ -21,6 +21,9 @@ const ORDER_STATUSES = ["pending", "processing", "shipped", "completed"];
  * Get a random element from an array
  */
 function getRandomElement<T>(array: T[]): T {
+	if (array.length === 0) {
+		throw new Error("Cannot get random element from empty array");
+	}
 	return array[Math.floor(Math.random() * array.length)] as T;
 }
 
@@ -64,15 +67,18 @@ async function insertOrder(
 	// Select a random user
 	const userId = getRandomElement(userIds);
 
-	// Select random products (1-5 items)
-	const numberOfItems = getRandomInt(1, 5);
+	// Select random products (1-5 items, but not more than available products)
+	const numberOfItems = Math.min(getRandomInt(1, 5), products.length);
 	const selectedProducts = [];
 	const usedProductIds = new Set<number>();
 
 	for (let i = 0; i < numberOfItems; i++) {
 		let product = getRandomElement(products);
 		// Avoid duplicates in the same order
-		while (usedProductIds.has(product.id)) {
+		while (
+			usedProductIds.has(product.id) &&
+			usedProductIds.size < products.length
+		) {
 			product = getRandomElement(products);
 		}
 		usedProductIds.add(product.id);
