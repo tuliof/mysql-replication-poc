@@ -6,6 +6,8 @@ This project demonstrates MySQL 8 replication using GTID (Global Transaction Ide
 
 - **Source (Master)**: MySQL 8 instance running on port 3306
 - **Replica (Slave)**: MySQL 8 instance running on port 3307
+- **Adminer**: Web-based database management tool running on port 8080
+- **Order Insertion Script**: TypeScript script using Bun runtime to continuously insert orders
 - **Replication Mode**: GTID-based replication with ROW binlog format
 
 ## Features
@@ -15,6 +17,9 @@ This project demonstrates MySQL 8 replication using GTID (Global Transaction Ide
 - ✅ Mock data for testing
 - ✅ Health checks for both instances
 - ✅ Read-only replica configuration
+- ✅ Adminer web interface for database management
+- ✅ Automated order insertion script using TypeScript and Bun
+- ✅ Biome.js for linting and formatting
 
 ## Database Schema
 
@@ -56,16 +61,22 @@ The demo includes the following tables:
 
 - Docker
 - Docker Compose
+- [Bun](https://bun.sh) (for running the order insertion script)
 
 ## Quick Start
 
-### 1. Start the MySQL instances
+### 1. Start the MySQL instances and Adminer
 
 ```bash
 docker-compose up -d
 ```
 
-This will start both the source and replica MySQL instances. The source will automatically initialize with the schema and mock data.
+This will start:
+- MySQL source (port 3306)
+- MySQL replica (port 3307)
+- Adminer web interface (port 8080)
+
+The source will automatically initialize with the schema and mock data.
 
 ### 2. Set up replication
 
@@ -111,14 +122,90 @@ SELECT * FROM users WHERE email = 'test@example.com';
 
 The new user should appear on the replica within seconds.
 
+## Automated Order Insertion
+
+The project includes a TypeScript script that continuously inserts new orders into the master MySQL instance, allowing you to observe real-time replication.
+
+### Prerequisites for Running the Script
+
+Install [Bun](https://bun.sh):
+```bash
+curl -fsSL https://bun.sh/install | bash
+```
+
+### Install Dependencies
+
+```bash
+bun install
+```
+
+### Run the Order Insertion Script
+
+```bash
+bun run insert-orders
+```
+
+The script will:
+- Connect to the master MySQL instance
+- Continuously insert new orders with random items every 5 seconds (configurable)
+- Display logs showing each order created
+- Automatically handle transactions and foreign key relationships
+
+### Configuration
+
+You can configure the script using environment variables:
+
+```bash
+# Database connection
+MYSQL_HOST=localhost \
+MYSQL_PORT=3306 \
+MYSQL_USER=demo_user \
+MYSQL_PASSWORD=demo_pass \
+MYSQL_DATABASE=demo_db \
+INSERT_INTERVAL_MS=5000 \
+bun run insert-orders
+```
+
+### Observe Replication
+
+While the script is running, you can:
+1. Watch orders being created in the master database
+2. Verify they replicate to the slave database
+3. Use Adminer to query both databases in real-time
+
+Press `Ctrl+C` to stop the script.
+
 ## Accessing the Databases
 
-### Source Database
+### Via Adminer (Web Interface)
+
+Open your browser and navigate to:
+```
+http://localhost:8080
+```
+
+**Login credentials for Source:**
+- System: MySQL
+- Server: mysql-source
+- Username: root (or demo_user)
+- Password: rootpass (or demo_pass)
+- Database: demo_db
+
+**Login credentials for Replica:**
+- System: MySQL
+- Server: mysql-replica
+- Username: root (or demo_user)
+- Password: rootpass (or demo_pass)
+- Database: demo_db
+
+### Via Command Line
+
+#### Source Database
 ```bash
 docker exec -it mysql-source mysql -uroot -prootpass demo_db
 ```
 
-### Replica Database
+#### Replica Database
 ```bash
 docker exec -it mysql-replica mysql -uroot -prootpass demo_db
 ```
@@ -202,6 +289,34 @@ docker exec mysql-replica mysql -uroot -prootpass -e "STOP REPLICA; RESET REPLIC
 ./setup-replication.sh
 ```
 
+### Order insertion script connection issues
+
+If the script can't connect to MySQL:
+1. Ensure Docker containers are running: `docker-compose ps`
+2. Check the connection parameters match your setup
+3. Verify the database is initialized: `docker exec mysql-source mysql -uroot -prootpass demo_db -e "SELECT COUNT(*) FROM users;"`
+
+## Development Tools
+
+This project uses Bun as the runtime and package manager, and Biome.js for linting and formatting.
+
+### Linting and Formatting
+
+Check code quality:
+```bash
+bun run lint
+```
+
+Auto-fix linting issues:
+```bash
+bun run lint:fix
+```
+
+Format code:
+```bash
+bun run format
+```
+
 ## Stopping and Cleaning Up
 
 ### Stop the containers
@@ -218,13 +333,17 @@ docker-compose down -v
 
 ```
 .
-├── docker-compose.yml          # Docker Compose configuration
+├── docker-compose.yml          # Docker Compose configuration (includes Adminer)
 ├── mysql-config/
 │   ├── source.cnf             # Source MySQL configuration (GTID enabled)
 │   └── replica.cnf            # Replica MySQL configuration (GTID enabled)
 ├── sql/
 │   └── init-source.sql        # Database schema and mock data
 ├── setup-replication.sh       # Script to configure replication
+├── insert-orders.ts           # TypeScript script to insert orders continuously
+├── package.json               # Bun project configuration
+├── biome.json                 # Biome.js linter/formatter configuration
+├── tsconfig.json              # TypeScript configuration
 └── README.md                  # This file
 ```
 

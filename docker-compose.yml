@@ -45,6 +45,19 @@ services:
       timeout: 5s
       retries: 5
 
+  adminer:
+    image: adminer:latest
+    container_name: adminer
+    ports:
+      - "8080:8080"
+    networks:
+      - mysql-replication
+    depends_on:
+      - mysql-source
+      - mysql-replica
+    environment:
+      ADMINER_DEFAULT_SERVER: mysql-source
+
 volumes:
   source-data:
   replica-data:
