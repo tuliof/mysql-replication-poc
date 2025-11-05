@@ -46,7 +46,11 @@ async function getProducts(
 	connection: mysql.Connection,
 ): Promise<Array<{ id: number; price: number }>> {
 	const [rows] = await connection.query("SELECT id, price FROM products");
-	return rows as Array<{ id: number; price: number }>;
+	// Convert price from string to number
+	return (rows as Array<{ id: number; price: string }>).map((row) => ({
+		id: row.id,
+		price: Number.parseFloat(row.price),
+	}));
 }
 
 /**
